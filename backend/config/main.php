@@ -65,6 +65,8 @@ return [
                 'api/v1/request-password-reset' => 'api/v1/auth/request-password-reset',
                 'api/v1/reset-password' => 'api/v1/auth/reset-password',
 
+                'api/v1/test' => 'api/v1/auth/test',
+
 //                'posts' => 'post/index',
 //                'post/<id:\d+>' => 'post/view',
 //                'pattern' => 'posts',

@@ -36,12 +36,7 @@ class AuthController extends ActiveController
     )
     {
         parent::__construct($id, $module, $config);
-
-        Yii::$container->set('backend\requests\auth\LoginRequest');
-        Yii::$container->set('backend\requests\auth\SignupRequest');
-        Yii::$container->set('backend\requests\auth\ResendVerificationEmailRequest');
-        Yii::$container->set('backend\requests\auth\PasswordResetLinkRequest');
-        Yii::$container->set('backend\requests\auth\ResetPasswordRequest');
+        $this->setDependency();
     }
 
     /**
@@ -66,6 +61,7 @@ class AuthController extends ActiveController
                     'verify-email',
                     'request-password-reset',
                     'reset-password',
+                    'test',
                 ],
             ],
             'access' => [
@@ -83,6 +79,7 @@ class AuthController extends ActiveController
                             'verify-email',
                             'request-password-reset',
                             'reset-password',
+                            'test',
                         ],
                         'allow' => true,
                         'roles' => ['?'],
@@ -121,6 +118,20 @@ class AuthController extends ActiveController
                 'class' => \yii\web\ErrorAction::class,
             ],
         ];
+    }
+
+    private function setDependency(): void
+    {
+        Yii::$container->set('backend\requests\auth\LoginRequest');
+        Yii::$container->set('backend\requests\auth\SignupRequest');
+        Yii::$container->set('backend\requests\auth\ResendVerificationEmailRequest');
+        Yii::$container->set('backend\requests\auth\PasswordResetLinkRequest');
+        Yii::$container->set('backend\requests\auth\ResetPasswordRequest');
+    }
+
+    public function actionTest(): void
+    {
+        dd('test');
     }
 
     /**
