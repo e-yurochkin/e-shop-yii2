@@ -61,7 +61,6 @@ class AuthController extends ActiveController
                     'verify-email',
                     'request-password-reset',
                     'reset-password',
-                    'test',
                 ],
             ],
             'access' => [
@@ -79,7 +78,6 @@ class AuthController extends ActiveController
                             'verify-email',
                             'request-password-reset',
                             'reset-password',
-                            'test',
                         ],
                         'allow' => true,
                         'roles' => ['?'],
@@ -99,6 +97,8 @@ class AuthController extends ActiveController
                     'signup' => ['post'],
                     'resend-verification-email' => ['post'],
                     'verify-email' => ['get'],
+                    'request-password-reset' => ['post'],
+                    'reset-password' => ['post'],
                 ],
             ],
 //            'rateLimiter' => [
@@ -127,11 +127,6 @@ class AuthController extends ActiveController
         Yii::$container->set('backend\requests\auth\ResendVerificationEmailRequest');
         Yii::$container->set('backend\requests\auth\PasswordResetLinkRequest');
         Yii::$container->set('backend\requests\auth\ResetPasswordRequest');
-    }
-
-    public function actionTest(): void
-    {
-        dd('test');
     }
 
     /**

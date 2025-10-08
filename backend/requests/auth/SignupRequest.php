@@ -60,20 +60,12 @@ class SignupRequest extends Model
         $user->username = $this->username;
         $user->email = $this->email;
         $user->setPassword($this->password);
-        $user->generateAuthKey();
         $user->generateEmailVerificationToken();
         $user->save();
         $auth->assign($auth->getRole($this->role === 3 ? 'customer' : 'seller'), $user->id);
         $this->sendEmail($user);
 
-        return [
-            'message' => 'Successful signed up, check your email for further instructions.',
-            'access token data' => [
-                'access_token' => $user->getAuthKey(),
-                'token_type' => 'Bearer',
-                'expires_at' => date('d-m-Y H:m', $user->getAuthKeyExpireTimestamp()),
-            ]
-        ];
+        return ['message' => 'Successful signed up, check your email for further instructions.'];
     }
 
     /**
