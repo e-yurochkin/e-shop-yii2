@@ -1,0 +1,42 @@
+#actor: ApiTester
+#suite_namespace: \Api
+#modules:
+#    # enable helpers as array
+#    enabled: []
+
+#actor: ApiTester
+#modules:
+#    enabled:
+#        - REST:
+#              url: http://localhost:8080/index-test.php/
+#              depends: Yii2
+#              part: JSON
+#              configFile: 'config/test.php'
+#        - \Helper\Api
+#
+#    config:
+#        - Yii2
+
+#actor: ApiTester
+#suite_namespace: backend\tests\api
+##class_name: ApiTester
+#modules:
+#  enabled:
+#    - REST:
+#        url: /api/v1
+#        depends: Yii2
+#    - \ApiBundle\Helper\Api
+#  config:
+#    - Yii2
+
+suite_namespace: backend\tests\api\v1
+actor: ApiTester
+modules:
+  enabled:
+    - REST:
+        url: http://localhost:8082/index-test.php/
+        depends: Yii2
+        part: Json
+    - backend\tests\Helper\Api
+    - Asserts
+    - Yii2

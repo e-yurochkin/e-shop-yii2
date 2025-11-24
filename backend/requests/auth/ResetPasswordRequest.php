@@ -5,8 +5,8 @@ namespace backend\requests\auth;
 use common\models\User;
 use Yii;
 use yii\base\Exception;
-use yii\base\InvalidArgumentException;
 use yii\base\Model;
+use yii\web\BadRequestHttpException;
 
 /**
  * Password reset form
@@ -42,13 +42,13 @@ class ResetPasswordRequest extends Model
         }
 
         if (!$token) {
-            throw new InvalidArgumentException('Password reset token cannot be blank.');
+            throw new BadRequestHttpException('Password reset token cannot be blank.');
         }
 
         $user = User::findByPasswordResetToken($token);
 
         if (!$user) {
-            throw new InvalidArgumentException('Wrong password reset token.');
+            throw new BadRequestHttpException('Wrong password reset token.');
         }
 
         $user->setPassword($this->password);

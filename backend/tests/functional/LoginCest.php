@@ -30,7 +30,7 @@ class LoginCest
     /**
      * @param FunctionalTester $I
      */
-    public function loginUser(FunctionalTester $I)
+    public function loginUser(FunctionalTester $I): void
     {
         $I->amOnRoute('/site/login');
         $I->fillField('Username', 'erau');

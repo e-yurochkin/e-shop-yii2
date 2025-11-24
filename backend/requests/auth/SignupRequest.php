@@ -13,7 +13,7 @@ use yii\base\Model;
 class SignupRequest extends Model
 {
     public ?string $username = null;
-    public int $role = 3;
+    public int $role_id = 3;
     public ?string $email = null;
     public ?string $password = null;
 
@@ -29,7 +29,7 @@ class SignupRequest extends Model
             ['username', 'unique', 'targetClass' => '\common\models\User', 'message' => 'This username has already been taken.'],
             ['username', 'string', 'min' => 2, 'max' => 255],
 
-            ['role', 'in', 'range' => [2, 3]],
+            ['role_id', 'in', 'range' => [2, 3]],
 
             ['email', 'trim'],
             ['email', 'required'],
@@ -52,18 +52,22 @@ class SignupRequest extends Model
     public function signup(array $data): array
     {
         if (!$this->load($data, '') || !$this->validate()) {
+            Yii::$app->response->statusCode = 400;
             return ['errors' => $this->errors];
         }
 
         $auth = Yii::$app->authManager;
         $user = new User();
         $user->username = $this->username;
+        $user->role_id = $this->role_id ?? 3;
         $user->email = $this->email;
         $user->setPassword($this->password);
         $user->generateEmailVerificationToken();
         $user->save();
-        $auth->assign($auth->getRole($this->role === 3 ? 'customer' : 'seller'), $user->id);
+        $auth->assign($auth->getRole($user->getRole()->one()->name), $user->id);
         $this->sendEmail($user);
+
+        Yii::$app->response->statusCode = 201;
 
         return ['message' => 'Successful signed up, check your email for further instructions.'];
     }

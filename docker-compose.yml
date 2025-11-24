@@ -4,6 +4,8 @@ networks:
 volumes:
   yii-mysql:
     driver: local
+  yii-mysql-test:
+    driver: local
 
 services:
 
@@ -52,13 +54,13 @@ services:
   mysql:
     image: 'mysql/mysql-server:8.0'
     ports:
-      - '${FORWARD_DB_PORT:-3306}:3306'
+      - ${DB_PORT:-3306}:3306
     environment:
-      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_HOST: '%'
-      MYSQL_DATABASE: '${DB_DATABASE}'
-      MYSQL_USER: '${DB_USERNAME}'
-      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
       - 'yii-mysql:/var/lib/mysql'
@@ -66,3 +68,22 @@ services:
       default:
         aliases:
           - php
+
+  mysql_test:
+    image: 'mysql/mysql-server:8.0'
+    ports:
+      - ${TEST_DB_PORT:-3307}:3306
+    volumes:
+      - 'yii-mysql-test:/var/lib/mysql'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: ${TEST_DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    networks:
+      default:
+        aliases:
+          - php
+

@@ -2,9 +2,13 @@
 
 namespace common\models;
 
+use backend\models\Role;
+use backend\models\Seller;
+use common\RateLimiter\IpRateLimitInterface;
 use Yii;
 use yii\base\Exception;
 use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 
@@ -13,6 +17,7 @@ use yii\web\IdentityInterface;
  *
  * @property integer $id
  * @property string $username
+ * @property integer $role_id
  * @property string $password_hash
  * @property string $password_reset_token
  * @property string $verification_token
@@ -24,11 +29,26 @@ use yii\web\IdentityInterface;
  * @property integer $updated_at
  * @property string $password write-only password
  */
-class User extends ActiveRecord implements IdentityInterface
+class User extends ActiveRecord implements IdentityInterface, IpRateLimitInterface
 {
     const int STATUS_DELETED = 0;
     const int STATUS_INACTIVE = 9;
     const int STATUS_ACTIVE = 10;
+
+    /**
+     * @var string IP of the user
+     */
+    private string $ip;
+
+    /**
+     * @var integer maximum number of allowed requests
+     */
+    private int $rateLimit;
+
+    /**
+     * @var integer time period for the rates to apply to
+     */
+    private int $timePeriod;
 
 
     /**
@@ -73,8 +93,6 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null): ?IdentityInterface
     {
-//        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
-
         $user = User::findOne(['auth_key' => $token]);
 
         if ($user && $user->getAuthKeyExpireTimestamp() < time()) {
@@ -229,5 +247,70 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken(): void
     {
         $this->password_reset_token = null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function findByIp(string $ip, int $rateLimit, int $timePeriod): static
+    {
+        $user = new static();
+
+        $user->ip = $ip;
+        $user->rateLimit = $rateLimit;
+        $user->timePeriod = $timePeriod;
+
+        return $user;
+    }
+
+    public function setRateLimit(int $rateLimit, int $timePeriod): User
+    {
+        $this->rateLimit = $rateLimit > 0 ? $rateLimit : 1;
+        $this->timePeriod = $timePeriod > 0 ? $timePeriod : 1;
+        $this->ip = '';
+
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getRateLimit($request, $action): array
+    {
+        return [$this->rateLimit, $this->timePeriod];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function loadAllowance($request, $action): array
+    {
+        $cache = Yii::$app->getCache();
+
+        return [
+            $cache->get('user.ratelimit.ip.allowance.' . $this->ip),
+            $cache->get('user.ratelimit.ip.allowance_updated_at.' . $this->ip),
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function saveAllowance($request, $action, $allowance, $timestamp): void
+    {
+        $cache = Yii::$app->getCache();
+
+        $cache->set('user.ratelimit.ip.allowance.' . $this->ip, $allowance);
+        $cache->set('user.ratelimit.ip.allowance_updated_at.' . $this->ip, $timestamp);
+    }
+
+    public function getSeller(): ActiveQuery
+    {
+        return $this->hasOne(Seller::class, ['user_id' => 'id']);
+    }
+
+    public function getRole(): ActiveQuery
+    {
+        return $this->hasOne(Role::class, ['id' => 'role_id']);
     }
 }

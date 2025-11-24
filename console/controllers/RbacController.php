@@ -2,7 +2,10 @@
 
 namespace console\controllers;
 
+use common\models\User;
 use Yii;
+use yii\base\Exception;
+use yii\base\UserException;
 use yii\console\Controller;
 
 class RbacController extends Controller
@@ -11,6 +14,10 @@ class RbacController extends Controller
     private array $sellerPermissions = [];
     private array $customerPermissions = [];
 
+    /**
+     * @throws Exception
+     * @throws \Exception
+     */
     public function actionInit(): void
     {
         $auth = Yii::$app->authManager;
@@ -115,8 +122,18 @@ class RbacController extends Controller
         }
 
         // назначаем роли конкретным пользователям из БД
-        $auth->assign($admin, 1);
-        $auth->assign($seller, 2);
-        $auth->assign($customer, 3);
+//        $auth->assign($admin, 1);
+//        $auth->assign($seller, 2);
+//        $auth->assign($customer, 3);
+
+        // назначение ролей всем созданным пользователям
+        foreach (User::find()->all() as $user) {
+            match ($user->role_id) {
+                1 => $auth->assign($admin, $user->id),
+                2 => $auth->assign($seller, $user->id),
+                3 => $auth->assign($customer, $user->id),
+                default => throw new UserException('Invalid user role'),
+            };
+        }
     }
 }

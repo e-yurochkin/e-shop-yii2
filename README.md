@@ -1,3 +1,33 @@
+## Требования к ПО
+
+Должны быть установленны docker и docker compose
+
+## Установка проекта
+
+1) Клонировать репозиторий на локальную машину
+2) Перейти в папку проекта
+3) Скопировать .env-dist в .env
+4) Инициализировать проект командой в консоли:
+    - docker compose run --rm php-dev init
+5) Проверить и если нужно настроить подключение к БД в файле common/config/main-local.php
+6) Накатить миграции и заполнить БД начальными данными командой:
+    - docker compose run --rm php-dev yii db/init
+7) Если начальные данные не нужны, то накатить миграции командами:
+    - docker compose run --rm php-dev yii migrate
+    - docker compose run --rm php-dev yii migrate --migrationPath=@yii/rbac/migrations
+
+## Тестирование
+
+1) Проверить и если нужно настроить подключение к тестовой БД в файле common/config/test-local.php
+2) Накатить миграции и заполнить тестовую БД начальными данными командой:
+    - docker compose run --rm php-dev ./yii_test test-db/init
+3) Запуск всех тестов api:
+    - docker compose run --rm php-dev codecept run backend/tests/api
+4) Запуск конкретного теста api:
+    - docker compose run --rm php-dev codecept run backend/tests/api/v1/AuthCest
+5) Запуск одного метода (теста) api:
+    - docker compose run --rm php-dev codecept run backend/tests/api/v1/AuthCest::имя_метода
+
 <p align="center">
     <a href="https://github.com/yiisoft" target="_blank">
         <img src="https://avatars0.githubusercontent.com/u/993323" height="100px">
@@ -58,3 +88,4 @@ frontend
 vendor/                  contains dependent 3rd-party packages
 environments/            contains environment-based overrides
 ```
+

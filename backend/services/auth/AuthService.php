@@ -3,7 +3,7 @@
 namespace backend\services\auth;
 
 use common\models\User;
-use yii\base\InvalidArgumentException;
+//use yii\base\InvalidArgumentException;
 use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\Request;
@@ -38,12 +38,12 @@ class AuthService
     }
 
     /**
-     * @throws Exception
+     * @throws BadRequestHttpException|Exception
      */
     public function verifyEmail(string $token): array
     {
         if (!$token) {
-            throw new InvalidArgumentException('Verify email token cannot be blank.');
+            throw new BadRequestHttpException('Verify email token cannot be blank.');
         }
 
         $user = User::findByVerificationToken($token);
@@ -52,15 +52,19 @@ class AuthService
             $user = User::findOne(['verification_token' => $token]);
 
             if (!$user || $user->status === User::STATUS_DELETED) {
-                throw new InvalidArgumentException('Wrong verify email token.');
+                throw new BadRequestHttpException('Wrong verify email token.');
             }
 
             return ['message' => 'Your email is already verified.'];
         }
 
+        if ($user->getRole()->one()->name === 'seller' && !$user->getSeller()->one()) {
+            return ['message' => 'Your should register detail seller data before email verification.'];
+        }
+
         $user->status = User::STATUS_ACTIVE;
         $user->save(false);
 
-        return ['message' => 'Your email has been verified'];
+        return ['message' => 'Your email has been verified successfully.'];
     }
 }

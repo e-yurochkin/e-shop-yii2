@@ -1,4 +1,7 @@
 <?php
+
+use yii\caching\FileCache;
+
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
     require __DIR__ . '/../../common/config/params-local.php',
@@ -47,33 +50,25 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-//                ['class' => 'yii\rest\UrlRule', 'controller' => 'api/v1/auth'],
+//                ['class' => 'yii\rest\UrlRule', 'controller' => 'controllers/api/v1/AuthController'],
 
                 '' => 'home/index',
-//                'users/init' => 'home/users-init',
-//                'login' => 'home/login',
-//                'admin' => 'home/admin',
-//                'seller' => 'home/seller',
-//                'create/product' => 'home/create-product',
 
                 'api/v1' => 'api/v1/auth/index',
                 'api/v1/login' => 'api/v1/auth/login',
                 'api/v1/logout' => 'api/v1/auth/logout',
                 'api/v1/signup' => 'api/v1/auth/signup',
+                'api/v1/register-seller-data' => 'api/v1/auth/register-seller-data',
                 'api/v1/verify-email' => 'api/v1/auth/verify-email',
                 'api/v1/resend-verification-email' => 'api/v1/auth/resend-verification-email',
                 'api/v1/request-password-reset' => 'api/v1/auth/request-password-reset',
                 'api/v1/reset-password' => 'api/v1/auth/reset-password',
-
-
 
 //                'posts' => 'post/index',
 //                'post/<id:\d+>' => 'post/view',
 //                'pattern' => 'posts',
 //                'route' => 'post/index',
 //                'suffix' => '.json',
-
-
             ],
         ],
         'formatter' => [
@@ -83,6 +78,11 @@ return [
 //            'timeFormat' => 'php:H:i:s',
 //            'defaultTimeZone' => 'Europe/Moscow',
             'timeZone' => 'Europe/Moscow',
+        ],
+        'cache' => [
+            'class' => FileCache::class,
+            // Дополнительные настройки, например:
+            'cachePath' => '@app/runtime/cache',
         ],
     ],
     'params' => $params,

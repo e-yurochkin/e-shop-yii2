@@ -37,6 +37,8 @@ class ResendVerificationEmailRequest extends Model
      */
     public function sendEmail(array $data): array
     {
+        Yii::$app->response->statusCode = 400;
+
         if (!$this->load($data, '') || !$this->validate()) {
             return ['errors' => $this->errors];
         }
@@ -49,12 +51,14 @@ class ResendVerificationEmailRequest extends Model
             return ['errors' => $this->errors];
         }
 
+        Yii::$app->response->statusCode = 200;
+
         if ($user->status === User::STATUS_ACTIVE) {
             return ['message' => 'Your email already verified.'];
         }
 
         if ($user->status === User::STATUS_DELETED) {
-            return ['message' => 'Your email has been deleted.'];
+            return ['message' => 'Your account has been deleted.'];
         }
 
         $user->generateEmailVerificationToken();

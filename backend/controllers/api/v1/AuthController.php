@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace backend\controllers\api\v1;
 
 use backend\requests\auth\LoginRequest;
 use backend\requests\auth\PasswordResetLinkRequest;
+use backend\requests\auth\RegisterSellerDataRequest;
 use backend\requests\auth\ResendVerificationEmailRequest;
 use backend\requests\auth\ResetPasswordRequest;
 use backend\requests\auth\SignupRequest;
 use backend\services\auth\AuthService;
+use common\RateLimiter\IpRateLimiter;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Yii;
 use yii\base\Module;
@@ -16,7 +20,7 @@ use yii\filters\AccessControl;
 use yii\filters\auth\HttpBearerAuth;
 use yii\filters\ContentNegotiator;
 use yii\filters\VerbFilter;
-use yii\rest\ActiveController;
+use yii\rest\Controller;
 use yii\web\BadRequestHttpException;
 use yii\web\Request;
 use yii\web\Response;
@@ -24,9 +28,10 @@ use yii\web\Response;
 /**
  * Auth controller
  */
-class AuthController extends ActiveController
+class AuthController extends Controller
 {
-    public $modelClass = 'app\common\models\User';
+    private static int $rateLimit = 2;
+    private static int $timePeriod = 1;
 
     public function __construct(
         string                       $id,
@@ -37,6 +42,20 @@ class AuthController extends ActiveController
     {
         parent::__construct($id, $module, $config);
         $this->setDependency();
+    }
+
+    public static function setRateLimit(int $rateLimit): void
+    {
+        if (YII_ENV_TEST) {
+            self::$rateLimit = $rateLimit;
+        }
+    }
+
+    public static function setTimePeriod(int $timePeriod): void
+    {
+        if (YII_ENV_TEST) {
+            self::$timePeriod = $timePeriod;
+        }
     }
 
     /**
@@ -57,6 +76,7 @@ class AuthController extends ActiveController
                     'login',
                     'error',
                     'signup',
+                    'register-seller-data',
                     'resend-verification-email',
                     'verify-email',
                     'request-password-reset',
@@ -74,6 +94,7 @@ class AuthController extends ActiveController
                             'login',
                             'error',
                             'signup',
+                            'register-seller-data',
                             'resend-verification-email',
                             'verify-email',
                             'request-password-reset',
@@ -95,27 +116,18 @@ class AuthController extends ActiveController
                     'logout' => ['post'],
                     'login' => ['post'],
                     'signup' => ['post'],
+                    'register-seller-data' => ['post'],
                     'resend-verification-email' => ['post'],
                     'verify-email' => ['get'],
                     'request-password-reset' => ['post'],
                     'reset-password' => ['post'],
                 ],
             ],
-//            'rateLimiter' => [
-//                'class' => RateLimiter::class,
-//                'enableRateLimitHeaders' => true,
-//            ],
-        ];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function actions(): array
-    {
-        return [
-            'error' => [
-                'class' => \yii\web\ErrorAction::class,
+            'rateLimiter' => [
+                'class' => IpRateLimiter::class,
+                'rateLimit' => self::$rateLimit,
+                'timePeriod' => self::$timePeriod,
+                'enableRateLimitHeaders' => false,
             ],
         ];
     }
@@ -127,6 +139,7 @@ class AuthController extends ActiveController
         Yii::$container->set('backend\requests\auth\ResendVerificationEmailRequest');
         Yii::$container->set('backend\requests\auth\PasswordResetLinkRequest');
         Yii::$container->set('backend\requests\auth\ResetPasswordRequest');
+        Yii::$container->set('backend\requests\auth\RegisterSellerDataRequest');
     }
 
     /**
@@ -136,7 +149,15 @@ class AuthController extends ActiveController
      */
     public function actionIndex(): Response
     {
-        return $this->asJson(Yii::$app->user->identity);
+        AuthController::setRateLimit(100);
+        AuthController::setTimePeriod(1);
+
+        return $this->asJson([
+            'rateLimit' => self::$rateLimit,
+            'timePeriod' => self::$timePeriod,
+        ]);
+
+//        return $this->asJson(Yii::$app->user->identity);
     }
 
     /**
@@ -172,7 +193,7 @@ class AuthController extends ActiveController
         $user->save();
         Yii::$app->user->logout();
 
-        return $this->asJson(['message' => 'You are logged out']);
+        return $this->asJson(['message' => 'You are logged out successfully']);
     }
 
     /**
@@ -192,11 +213,26 @@ class AuthController extends ActiveController
     }
 
     /**
+     * @throws \yii\base\Exception
+     * @throws BadRequestHttpException
+     */
+    public function actionRegisterSellerData(
+        Request                   $request,
+        RegisterSellerDataRequest $registerSellerInfoRequest
+    ): Response
+    {
+        $data = $this->authService->getPostData($request);
+
+        return $this->asJson($registerSellerInfoRequest->register($data));
+    }
+
+    /**
      * Verify email address
      *
      * @param string $token
      * @return yii\web\Response
      * @throws Exception
+     * @throws BadRequestHttpException
      */
     public function actionVerifyEmail(string $token): Response
     {
